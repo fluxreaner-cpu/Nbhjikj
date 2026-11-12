@@ -152,6 +152,33 @@ export default function App() {
     return counts;
   }, [catalog50k]);
 
+  // Handle Viral Shared Rig URL parameter (?rig=id1,id2,...)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const rigParam = params.get('rig');
+      if (rigParam) {
+        const ids = rigParam.split(',').map((id) => id.trim()).filter(Boolean);
+        if (ids.length > 0) {
+          const matchedProducts: Product[] = [];
+          for (const id of ids) {
+            const compact = catalog50k.find((p) => p.id === id);
+            if (compact) {
+              matchedProducts.push(expandToFullProduct(compact));
+            }
+          }
+          if (matchedProducts.length > 0) {
+            setWishlist(matchedProducts);
+            localStorage.setItem('budgettech_wishlist', JSON.stringify(matchedProducts));
+            setIsWishlistOpen(true);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Failed parsing shared rig URL:', err);
+    }
+  }, [catalog50k]);
+
   // Exact brand item counts for the 50,000 items database
   const brandCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -339,8 +366,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#080a0f] text-slate-100 cyber-grid relative selection:bg-purple-600 selection:text-white">
       
-      {/* First-gate Authentication & Verification Modal */}
-      {((!userSession || !userSession.isLoggedIn) || isAuthModalOpen) && (
+      {/* Authentication & Verification Modal (Opens on demand or login click) */}
+      {isAuthModalOpen && (
         <AuthModal
           language={language}
           onLanguageChange={handleLanguageChange}
@@ -350,7 +377,7 @@ export default function App() {
       )}
 
       {/* Main Interface */}
-      <div className={(!userSession?.isLoggedIn && !isAuthModalOpen) ? 'filter blur-md pointer-events-none select-none' : ''}>
+      <div>
         
         {/* Top Navbar */}
         <Navbar

@@ -13,7 +13,8 @@ import {
   RotateCcw,
   Sparkles,
   ArrowLeft,
-  Lock
+  Lock,
+  X
 } from 'lucide-react';
 import { Language, UserSession } from '../types';
 import { translations } from '../i18n';
@@ -263,7 +264,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#05060a]/92 backdrop-blur-xl overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#05060a]/95 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) onClose();
+      }}
+    >
       {/* Background Cyber Glow Spheres */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
@@ -290,19 +296,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           </div>
 
-          {/* Language Selector Inside Modal */}
-          <div className="flex items-center gap-1 bg-slate-900/80 border border-slate-700/60 rounded-lg p-1">
-            <Globe className="w-3.5 h-3.5 text-slate-400 ml-1.5" />
-            <select
-              value={language}
-              onChange={(e) => onLanguageChange(e.target.value as Language)}
-              className="bg-transparent text-xs text-slate-200 font-medium px-1.5 py-1 focus:outline-none cursor-pointer"
-            >
-              <option value="en" className="bg-slate-900 text-white">EN</option>
-              <option value="de" className="bg-slate-900 text-white">DE</option>
-              <option value="ru" className="bg-slate-900 text-white">RU</option>
-              <option value="uk" className="bg-slate-900 text-white">UA</option>
-            </select>
+          <div className="flex items-center gap-2">
+            {/* Language Selector Inside Modal */}
+            <div className="flex items-center gap-1 bg-slate-900/80 border border-slate-700/60 rounded-lg p-1">
+              <Globe className="w-3.5 h-3.5 text-slate-400 ml-1.5" />
+              <select
+                value={language}
+                onChange={(e) => onLanguageChange(e.target.value as Language)}
+                className="bg-transparent text-xs text-slate-200 font-medium px-1.5 py-1 focus:outline-none cursor-pointer"
+              >
+                <option value="en" className="bg-slate-900 text-white">EN</option>
+                <option value="de" className="bg-slate-900 text-white">DE</option>
+                <option value="ru" className="bg-slate-900 text-white">RU</option>
+                <option value="uk" className="bg-slate-900 text-white">UA</option>
+              </select>
+            </div>
+
+            {/* Close Modal Button */}
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-colors cursor-pointer"
+                title="Закрыть"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 

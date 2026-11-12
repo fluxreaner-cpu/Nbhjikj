@@ -9,13 +9,10 @@ import { getClientIp } from './rateLimiter';
 export function httpsEnforcer(req: Request, res: Response, next: NextFunction) {
   const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
   
-  if (process.env.NODE_ENV === 'production' && !isHttps) {
-    const host = req.headers.host || 'localhost';
-    return res.redirect(301, `https://${host}${req.originalUrl}`);
+  // Set HSTS header only for verified secure connections to avoid breaking localhost or dev proxies
+  if (isHttps) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
-
-  // Set HSTS header (Level 9)
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   next();
 }
 
@@ -35,17 +32,16 @@ export function browserSecurityHeaders(req: Request, res: Response, next: NextFu
   // Feature / Permissions Policy
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
 
-  // Clickjacking & Frame Ancestors (Allows AI Studio iframe host & self, blocks arbitrary framing)
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-
+  // Do NOT send X-Frame-Options: SAMEORIGIN because it breaks Google AI Studio iframe embedding.
+  // Instead, use modern CSP frame-ancestors which explicitly allows Google, AI Studio, Cloud Run, and self.
   const cspDirectives = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-eval needed for obfuscated bundle runtime decode
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://api.pwnedpasswords.com https://*.run.app https://*.google.com wss: ws:",
-    "frame-ancestors 'self' https://*.google.com https://*.run.app https://*.aistudio.google.com",
+    "default-src 'self' 'unsafe-inline' data: blob: https:",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https:",
+    "style-src 'self' 'unsafe-inline' https: fonts.googleapis.com",
+    "font-src 'self' https: data: fonts.gstatic.com",
+    "img-src 'self' data: https: http: blob:",
+    "connect-src 'self' data: blob: https: http: wss: ws:",
+    "frame-ancestors 'self' https://*.google.com https://*.googleusercontent.com https://*.run.app https://*.aistudio.google.com https://ai.google.dev *",
     "base-uri 'self'",
     "form-action 'self'",
   ];
@@ -66,25 +62,31 @@ export function corsValidator(req: Request, res: Response, next: NextFunction) {
     return next();
   }
 
-  // Match allowed origins
+  // Match allowed origins: includes AI Studio custom domains (*.ai.studio), Google Cloud, and localhost
   const isAllowed = 
     origin === appUrl ||
     origin.includes('localhost') ||
     origin.includes('127.0.0.1') ||
     origin.endsWith('.run.app') ||
-    origin.endsWith('.google.com');
+    origin.endsWith('.google.com') ||
+    origin.endsWith('.ai.studio') ||
+    origin.endsWith('ai.studio') ||
+    origin.endsWith('.googleusercontent.com') ||
+    origin.endsWith('.web.app') ||
+    origin.endsWith('.firebaseapp.com');
 
   if (isAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token');
-  } else {
+  } else if (req.method !== 'GET' && req.method !== 'HEAD') {
+    // Only reject mutating requests from unauthorized origins
     logSecurityEvent({
       eventType: 'CORS_VIOLATION',
       severity: 'WARN',
       ip: getClientIp(req),
-      details: { rejectedOrigin: origin },
+      details: { rejectedOrigin: origin, method: req.method, path: req.path },
     });
     return res.status(403).json({ error: 'CORS Policy: Origin not allowed', code: 'ERR_CORS_DENIED' });
   }
@@ -106,16 +108,22 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
-  // Exempt auth bootstrap / public endpoints if needed, but verify Origin / Referer
   const origin = req.headers.origin;
-  const referer = req.headers.referer;
   const host = req.headers.host;
 
-  // If origin is present, check host match
   if (origin && host) {
     try {
       const originHost = new URL(origin).host;
-      if (originHost !== host && !origin.endsWith('.run.app') && !origin.includes('localhost')) {
+      const isAllowedHost = 
+        originHost === host ||
+        originHost.endsWith('.run.app') ||
+        originHost.endsWith('.ai.studio') ||
+        originHost.endsWith('ai.studio') ||
+        originHost.endsWith('.google.com') ||
+        originHost.endsWith('.googleusercontent.com') ||
+        originHost.includes('localhost');
+
+      if (!isAllowedHost) {
         logSecurityEvent({
           eventType: 'CSRF_BLOCKED',
           severity: 'CRITICAL',

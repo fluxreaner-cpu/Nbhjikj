@@ -114,44 +114,46 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         <div className="p-4 sm:p-6 overflow-y-auto space-y-6">
           
           {/* Main Hero Split: Hardware Image & Purchasing Snapshot */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             {/* Image Preview with 3D Depth */}
-            <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950 border border-purple-500/20 shadow-[0_15px_30px_rgba(0,0,0,0.6)] aspect-[4/3] flex items-center justify-center">
-              {!imageError ? (
-                <img
-                  src={product.image}
-                  alt={product.title}
-                  referrerPolicy="no-referrer"
-                  onError={() => setImageError(true)}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center select-none bg-gradient-to-b from-[#141829] to-[#0a0c16]">
-                  <div className="p-4 rounded-2xl bg-purple-950/50 border border-purple-500/30 mb-2 text-purple-400">
-                    {product.category === 'cpus' && <Cpu className="w-12 h-12" />}
-                    {product.category === 'audio' && <Headphones className="w-12 h-12" />}
-                    {product.category === 'peripherals' && <Keyboard className="w-12 h-12" />}
-                    {product.category === 'gpus' && <Gamepad2 className="w-12 h-12" />}
+            <div className="w-full min-w-0">
+              <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950 border border-purple-500/20 shadow-[0_15px_30px_rgba(0,0,0,0.6)] flex items-center justify-center">
+                {!imageError ? (
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    referrerPolicy="no-referrer"
+                    onError={() => setImageError(true)}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center select-none bg-gradient-to-b from-[#141829] to-[#0a0c16]">
+                    <div className="p-4 rounded-2xl bg-purple-950/50 border border-purple-500/30 mb-2 text-purple-400">
+                      {product.category === 'cpus' && <Cpu className="w-12 h-12" />}
+                      {product.category === 'audio' && <Headphones className="w-12 h-12" />}
+                      {product.category === 'peripherals' && <Keyboard className="w-12 h-12" />}
+                      {product.category === 'gpus' && <Gamepad2 className="w-12 h-12" />}
+                    </div>
+                    <span className="text-xs font-mono uppercase tracking-wider text-purple-300 font-bold">
+                      {product.category}
+                    </span>
                   </div>
-                  <span className="text-xs font-mono uppercase tracking-wider text-purple-300 font-bold">
-                    {product.category}
-                  </span>
-                </div>
-              )}
-              <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
-                <span className="px-2.5 py-1 rounded-md text-xs font-mono font-bold text-emerald-300 bg-[#071310]/90 border border-emerald-500/50 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                  ★ {product.valueScore} / 10 Value
-                </span>
-                {discountPercent > 0 && (
-                  <span className="px-2.5 py-1 rounded-md text-xs font-mono font-bold text-purple-300 bg-[#160b24]/90 border border-purple-500/50 backdrop-blur-md">
-                    -{discountPercent}% OFF
-                  </span>
                 )}
+                <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
+                  <span className="px-2.5 py-1 rounded-md text-xs font-mono font-bold text-emerald-300 bg-[#071310]/90 border border-emerald-500/50 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                    ★ {product.valueScore} / 10 Value
+                  </span>
+                  {discountPercent > 0 && (
+                    <span className="px-2.5 py-1 rounded-md text-xs font-mono font-bold text-purple-300 bg-[#160b24]/90 border border-purple-500/50 backdrop-blur-md">
+                      -{discountPercent}% OFF
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Title & Instant Purchase Snapshot */}
-            <div className="flex flex-col justify-between">
+            <div className="w-full min-w-0 flex flex-col justify-between">
               <div>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
                   {product.title}
